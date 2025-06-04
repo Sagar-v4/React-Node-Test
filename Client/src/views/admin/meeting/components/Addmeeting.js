@@ -43,22 +43,62 @@ const AddMeeting = (props) => {
         initialValues: initialValues,
         validationSchema: MeetingSchema,
         onSubmit: (values, { resetForm }) => {
-            
+            AddData();
+            resetForm();
         },
     });
     const { errors, touched, values, handleBlur, handleChange, handleSubmit, setFieldValue } = formik
 
     const AddData = async () => {
-
+        try {
+            setIsLoding(true)
+            const payload = {
+                ...values,
+                attendes: Array.isArray(values.attendes) ? values.attendes : [],
+                attendesLead: Array.isArray(values.attendesLead) ? values.attendesLead : [],
+            };
+            let response = await postApi('api/meeting/add', payload);
+            if (response.status === 200) {
+			    toast.success("Meeting scheduled Successfully");
+                props.onClose();
+                props.setAction((pre) => !pre)
+            }
+        } catch (e) {
+            console.log(e);
+        }
+        finally {
+            setIsLoding(false)
+        }
     };
 
     const fetchAllData = async () => {
-        
+        try {
+            setIsLoding(true);
+            const [contacts, leads] = await Promise.all([
+                getApi('api/contact'),
+                getApi('api/lead')
+            ]);
+            if (contacts.status === 200) {
+                setContactData(contacts.data);
+            }
+            if (leads.status === 200) {
+                setLeadData(leads.data);
+            }
+        } catch (e) {
+            console.log(e);
+        }
+        finally {
+            setIsLoding(false)
+        }
     }
 
     useEffect(() => {
+        const fetchData = async () => {
+            await fetchAllData();
+        };
 
-    }, [props.id, values.related])
+        fetchData();
+    }, [props.id, values.related]);
 
     const extractLabels = (selectedItems) => {
         return selectedItems.map((item) => item._id);
@@ -67,7 +107,7 @@ const AddMeeting = (props) => {
     const countriesWithEmailAsLabel = (values.related === "Contact" ? contactdata : leaddata)?.map((item) => ({
         ...item,
         value: item._id,
-        label: values.related === "Contact" ? `${item.firstName} ${item.lastName}` : item.leadName,
+        label: values.related === "Contact" ? item.fullName : item.leadName,
     }));
 
     return (

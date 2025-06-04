@@ -8,7 +8,7 @@ Client/node_modules
 server/node_modules
 server/uploads
 server/.env
-Client/.env
+# Client/.env
 
 /.pnp
 .pnp.js
